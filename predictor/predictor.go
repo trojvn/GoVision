@@ -1,4 +1,4 @@
-package rcvgo
+package predictor
 
 import (
 	"image"
@@ -26,19 +26,19 @@ func (p *Predictor) CountRecordPos(pos image.Point, resolution image.Point) (flo
 }
 
 // GetPredictPoint вычисляет абсолютные координаты на основе относительного смещения и текущего разрешения.
-func (p *Predictor) GetPredictPoint(recordPos [2]float64, screenResolution image.Point) (float64, float64) {
+func (p *Predictor) GetPredictPoint(recordPos [2]float64, screenResolution image.Point) image.Point {
 	deltaX, deltaY := recordPos[0], recordPos[1]
 	w, h := float64(screenResolution.X), float64(screenResolution.Y)
 
 	targetX := deltaX*w + w*0.5
 	targetY := deltaY*w + h*0.5
 
-	return targetX, targetY
+	return image.Pt(int(targetX), int(targetY))
 }
 
 // GetPredictArea вычисляет область поиска вокруг предсказанной точки.
-func (p *Predictor) GetPredictArea(recordPos [2]float64, imageWH image.Point, imageResolution, screenResolution image.Point) [4]int {
-	x, y := p.GetPredictPoint(recordPos, screenResolution)
+func (p *Predictor) GetPredictArea(recordPos [2]float64, imageWH image.Point, imageResolution, screenResolution image.Point) image.Rectangle {
+	pt := p.GetPredictPoint(recordPos, screenResolution)
 
 	var predictXRadius, predictYRadius int
 
@@ -50,10 +50,10 @@ func (p *Predictor) GetPredictArea(recordPos [2]float64, imageWH image.Point, im
 		predictYRadius = imageWH.Y/2 + p.Deviation
 	}
 
-	return [4]int{
-		int(x) - predictXRadius,
-		int(y) - predictYRadius,
-		int(x) + predictXRadius,
-		int(y) + predictYRadius,
-	}
+	return image.Rect(
+		pt.X-predictXRadius,
+		pt.Y-predictYRadius,
+		pt.X+predictXRadius,
+		pt.Y+predictYRadius,
+	)
 }

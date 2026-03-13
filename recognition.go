@@ -1,6 +1,8 @@
 package rcvgo
 
 import (
+	"github.com/trojvn/rcvgo/engines"
+	"github.com/trojvn/rcvgo/utils"
 	"gocv.io/x/gocv"
 )
 
@@ -17,24 +19,16 @@ func New(threshold float32) *Recognition {
 
 // FindTemplate ищет шаблон на экране, используя стандартный Template Matching.
 func (r *Recognition) FindTemplate(screen, template gocv.Mat) (*MatchResult, error) {
-	tm := NewTemplateMatching(template, screen, r.Threshold)
+	tm := engines.NewTemplateMatching(template, screen, r.Threshold)
 	return tm.FindBestResult()
 }
 
 // FindMultiScale ищет шаблон на экране, перебирая масштабы.
 func (r *Recognition) FindMultiScale(screen, template gocv.Mat, ratioMin, ratioMax, step float64) (*MatchResult, error) {
-	res := MultiScaleSearch(screen, template, ratioMin, ratioMax, step, r.Threshold)
+	res := engines.MultiScaleSearch(screen, template, ratioMin, ratioMax, step, r.Threshold)
 	if res == nil {
 		return nil, nil
 	}
 
-	// Преобразуем MultiScaleResult в MatchResult
-	tm := NewTemplateMatching(template, screen, r.Threshold)
-	_, rectangle := tm.getTargetRectangle(res.MaxLoc, res.Width, res.Height)
-
-	return &MatchResult{
-		Result:     res.MaxLoc, // В оригинале это может быть центр, getTargetRectangle вернет его
-		Rectangle:  rectangle,
-		Confidence: res.Confidence,
-	}, nil
+	return utils.NewMatchResult(res.MaxLoc, res.Width, res.Height, res.Confidence), nil
 }

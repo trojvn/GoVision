@@ -1,9 +1,10 @@
-package rcvgo
+package engines
 
 import (
 	"errors"
-	"image"
 
+	"github.com/trojvn/rcvgo/core"
+	"github.com/trojvn/rcvgo/utils"
 	"gocv.io/x/gocv"
 )
 
@@ -22,7 +23,7 @@ func NewKAZEMatching(imSearch, imSource gocv.Mat, threshold float32) *KAZEMatchi
 	}
 }
 
-func (k *KAZEMatching) FindBestResult() (*MatchResult, error) {
+func (k *KAZEMatching) FindBestResult() (*core.MatchResult, error) {
 	if k.ImSource.Empty() || k.ImSearch.Empty() {
 		return nil, errors.New("empty images")
 	}
@@ -64,44 +65,15 @@ func (k *KAZEMatching) FindBestResult() (*MatchResult, error) {
 		return nil, errors.New("not enough good matches")
 	}
 
-	// Логика гомографии аналогична SIFT
-	srcPointsMat := gocv.NewMatFromPoint2fVector(gocv.NewPoint2fVectorFromPoints(srcPts), false)
-	defer srcPointsMat.Close()
-
-	schPointsMat := gocv.NewMatFromPoint2fVector(gocv.NewPoint2fVectorFromPoints(schPts), false)
-	defer schPointsMat.Close()
-
-	maskHomography := gocv.NewMat()
-	defer maskHomography.Close()
-
-	homography := gocv.FindHomography(schPointsMat, srcPointsMat, gocv.HomographyMethodRANSAC, 5.0, &maskHomography, 2000, 0.995)
-	if homography.Empty() {
-		return nil, errors.New("homography matrix not found")
-	}
-	defer homography.Close()
-
 	h, w := k.ImSearch.Rows(), k.ImSearch.Cols()
-	ptsSch := []gocv.Point2f{{X: 0, Y: 0}, {X: 0, Y: float32(h - 1)}, {X: float32(w - 1), Y: float32(h - 1)}, {X: float32(w - 1), Y: 0}}
-	ptsSchMat := gocv.NewMatFromPoint2fVector(gocv.NewPoint2fVectorFromPoints(ptsSch), false)
-	defer ptsSchMat.Close()
-
-	ptsDstMat := gocv.NewMat()
-	defer ptsDstMat.Close()
-	gocv.PerspectiveTransform(ptsSchMat, &ptsDstMat, homography)
-
-	rectangle := make([]image.Point, 4)
-	var sumX, sumY float32
-	for i := 0; i < 4; i++ {
-		px := ptsDstMat.GetFloatAt(i, 0)
-		py := ptsDstMat.GetFloatAt(i, 1)
-		rectangle[i] = image.Pt(int(px), int(py))
-		sumX += px
-		sumY += py
+	middle, rect, confidence, err := utils.FindHomographyResult(srcPts, schPts, h, w)
+	if err != nil {
+		return nil, err
 	}
 
-	return &MatchResult{
-		Result:     image.Pt(int(sumX/4), int(sumY/4)),
-		Rectangle:  rectangle,
-		Confidence: float32(len(goodMatches)) / 100.0, // Упрощенно
+	return &core.MatchResult{
+		Result:     *middle,
+		Rectangle:  rect,
+		Confidence: confidence,
 	}, nil
 }

@@ -6,7 +6,31 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/trojvn/rcvgo/core"
+	"github.com/trojvn/rcvgo/engines"
+	"github.com/trojvn/rcvgo/utils"
 	"gocv.io/x/gocv"
+)
+
+// Реэкспорт основных типов для удобства пользователя
+type MatchResult = core.MatchResult
+type TargetPos = core.TargetPos
+
+const (
+	MID = core.MID
+	LT  = core.LT
+	LB  = core.LB
+	RB  = core.RB
+	RT  = core.RT
+)
+
+type OptimizationLevel = core.OptimizationLevel
+
+const (
+	OptimizationMaximum  = core.OptimizationMaximum
+	OptimizationBalanced = core.OptimizationBalanced
+	OptimizationFast     = core.OptimizationFast
+	OptimizationAccurate = core.OptimizationAccurate
 )
 
 // Template - аналог класса TP из Python.
@@ -21,7 +45,11 @@ type Template struct {
 	ScaleMax          float64
 	ScaleStep         float64
 	OptimizationLevel OptimizationLevel
-	Config            Config
+	Config            core.Config
+}
+
+func (t *Template) GetFilename() string {
+	return t.Filename
 }
 
 func NewTemplate(filename string) *Template {
@@ -34,7 +62,7 @@ func NewTemplate(filename string) *Template {
 		ScaleMax:          1000,
 		ScaleStep:         0.005,
 		OptimizationLevel: OptimizationAccurate,
-		Config:            OptimizationMap[OptimizationAccurate],
+		Config:            core.OptimizationMap[core.OptimizationAccurate],
 	}
 }
 
@@ -64,6 +92,10 @@ func (t *Template) MatchIn(screen gocv.Mat) (image.Point, error) {
 
 // CVMatch реализует логику перебора методов (mstpl, gmstpl, sift).
 func (t *Template) CVMatch(screen gocv.Mat) (*MatchResult, error) {
+	if screen.Empty() {
+		return nil, errors.New("screen image is empty")
+	}
+
 	path := t.Filepath()
 	templateImg := gocv.IMRead(path, gocv.IMReadColor)
 	if templateImg.Empty() {
@@ -75,35 +107,40 @@ func (t *Template) CVMatch(screen gocv.Mat) (*MatchResult, error) {
 	resizedTemplate := t.resizeImage(templateImg, screen)
 	defer resizedTemplate.Close()
 
+	var lastErr error
+
 	// 2. Попытка MultiScaleTemplateMatching (mstpl/gmstpl)
 	if t.Config.PyramidSearch || t.Config.AdaptiveStep {
-		res := MultiScaleSearch(screen, templateImg, 0.5, 1.5, t.ScaleStep, t.Threshold)
+		res := engines.MultiScaleSearch(screen, templateImg, 0.5, 1.5, t.ScaleStep, t.Threshold)
 		if res != nil {
-			// Преобразуем в MatchResult
-			tm := NewTemplateMatching(templateImg, screen, t.Threshold)
-			_, rect := tm.getTargetRectangle(res.MaxLoc, res.Width, res.Height)
-			return &MatchResult{
-				Result:     res.MaxLoc,
-				Rectangle:  rect,
-				Confidence: res.Confidence,
-			}, nil
+			return utils.NewMatchResult(res.MaxLoc, res.Width, res.Height, res.Confidence), nil
 		}
 	}
 
 	// 3. Попытка обычного TemplateMatching
-	tm := NewTemplateMatching(resizedTemplate, screen, t.Threshold)
+	tm := engines.NewTemplateMatching(resizedTemplate, screen, t.Threshold)
 	tm.RGB = t.RGB
 	tm.SmartRGB = t.Config.SmartRGB
-	res, _ := tm.FindBestResult()
+	res, err := tm.FindBestResult()
+	if err != nil {
+		lastErr = err
+	}
 	if res != nil {
 		return res, nil
 	}
 
 	// 4. Попытка SIFT (если ничего не помогло)
-	sift := NewSIFTMatching(resizedTemplate, screen, t.Threshold)
-	res, _ = sift.FindBestResult()
+	sift := engines.NewSIFTMatching(resizedTemplate, screen, t.Threshold)
+	res, err = sift.FindBestResult()
+	if err != nil {
+		lastErr = err
+	}
 
-	return res, nil
+	if res != nil {
+		return res, nil
+	}
+
+	return nil, lastErr
 }
 
 func (t *Template) resizeImage(img, screen gocv.Mat) gocv.Mat {

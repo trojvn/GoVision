@@ -1,9 +1,10 @@
-package rcvgo
+package engines
 
 import (
 	"image"
 	"sync"
 
+	"github.com/trojvn/rcvgo/utils"
 	"gocv.io/x/gocv"
 )
 
@@ -18,11 +19,17 @@ type MultiScaleResult struct {
 
 // MultiScaleSearch выполняет параллельный поиск шаблона в разных масштабах.
 func MultiScaleSearch(orgSrc, orgTempl gocv.Mat, ratioMin, ratioMax, step float64, threshold float32) *MultiScaleResult {
+	srcGray := utils.ImgMatToGray(orgSrc)
+	defer srcGray.Close()
+	templGray := utils.ImgMatToGray(orgTempl)
+	defer templGray.Close()
+
 	var wg sync.WaitGroup
 	results := make(chan MultiScaleResult)
-
-	// Ограничиваем количество одновременно работающих горутин для стабильности
 	semaphore := make(chan struct{}, 8)
+
+	mask := gocv.NewMat()
+	defer mask.Close()
 
 	for r := ratioMin; r <= ratioMax; r += step {
 		wg.Add(1)
@@ -31,33 +38,21 @@ func MultiScaleSearch(orgSrc, orgTempl gocv.Mat, ratioMin, ratioMax, step float6
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			src := orgSrc.Clone()
-			defer src.Close()
-			templ := orgTempl.Clone()
-			defer templ.Close()
+			newW := int(float64(templGray.Cols()) * ratio)
+			newH := int(float64(templGray.Rows()) * ratio)
 
-			newW := int(float64(templ.Cols()) * ratio)
-			newH := int(float64(templ.Rows()) * ratio)
-
-			if newW < 10 || newH < 10 || newW > src.Cols() || newH > src.Rows() {
+			if newW < 10 || newH < 10 || newW > srcGray.Cols() || newH > srcGray.Rows() {
 				return
 			}
 
-			gocv.Resize(templ, &templ, image.Pt(newW, newH), 0, 0, gocv.InterpolationLinear)
+			resizedTempl := gocv.NewMat()
+			defer resizedTempl.Close()
+			gocv.Resize(templGray, &resizedTempl, image.Pt(newW, newH), 0, 0, gocv.InterpolationLinear)
 
 			res := gocv.NewMat()
 			defer res.Close()
 
-			mask := gocv.NewMat()
-			defer mask.Close()
-
-			// Используем Grayscale для скорости в многомасштабном поиске
-			srcGray := ImgMatToGray(src)
-			defer srcGray.Close()
-			schGray := ImgMatToGray(templ)
-			defer schGray.Close()
-
-			gocv.MatchTemplate(srcGray, schGray, &res, gocv.TmCcoeffNormed, mask)
+			gocv.MatchTemplate(srcGray, resizedTempl, &res, gocv.TmCcoeffNormed, mask)
 
 			_, maxVal, _, maxLoc := gocv.MinMaxLoc(res)
 

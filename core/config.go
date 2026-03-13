@@ -1,4 +1,4 @@
-package rcvgo
+package core
 
 type OptimizationLevel string
 
