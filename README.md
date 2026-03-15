@@ -1,6 +1,6 @@
-# RCvGo
+# GoVision
 
-RCvGo — это мощная и производительная библиотека на Go для распознавания образов и поиска шаблонов на изображениях, вдохновленная популярными инструментами компьютерного зрения. Она предоставляет удобный интерфейс для работы с OpenCV (`gocv`), объединяя классические и современные алгоритмы поиска.
+GoVision — это мощная и производительная библиотека на Go для распознавания образов и поиска шаблонов на изображениях, вдохновленная популярными инструментами компьютерного зрения. Она предоставляет удобный интерфейс для работы с OpenCV (`gocv`), объединяя классические и современные алгоритмы поиска.
 
 ## Особенности
 
@@ -16,7 +16,7 @@ RCvGo — это мощная и производительная библиот
 Для работы библиотеки требуется установленный [OpenCV](https://opencv.org/) и [GoCV](https://gocv.io/).
 
 ```bash
-go get github.com/trojvn/rcvgo
+go get github.com/trojvn/GoVision
 ```
 
 ## Быстрый старт
@@ -27,7 +27,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"github.com/trojvn/rcvgo"
+	"github.com/trojvn/GoVision"
 	"gocv.io/x/gocv"
 )
 
@@ -37,7 +37,7 @@ func main() {
 	defer screen.Close()
 
 	// Инициализируем шаблон (ищет в папке "images/button.png")
-	tpl := rcvgo.NewTemplate("button")
+	tpl := GoVision.NewTemplate("button")
 	tpl.Threshold = 0.8
 	tpl.RGB = true
 
@@ -59,19 +59,19 @@ func main() {
 
 ```go
 import (
-    "github.com/trojvn/rcvgo"
-    "github.com/trojvn/rcvgo/device"
+    "github.com/trojvn/GoVision"
+    "github.com/trojvn/GoVision/device"
 )
 
 func main() {
     // 1. Инициализируйте вашу реализацию устройства (ADB/WDA)
-    var myDevice device.Device = ... 
+    var myDevice device.Device = ...
 
     // 2. Создайте движок управления
     engine := device.NewEngine(myDevice)
 
     // 3. Найдите шаблон и нажмите на него (с автоматическим масштабированием)
-    tpl := rcvgo.NewTemplate("login_button")
+    tpl := GoVision.NewTemplate("login_button")
     err := engine.Tap(tpl, 10 * time.Second)
 }
 ```
@@ -81,8 +81,8 @@ func main() {
 Если размер объекта на экране может меняться, используйте `OptimizationBalanced` или `OptimizationMaximum`:
 
 ```go
-tpl := rcvgo.NewTemplate("icon")
-tpl.OptimizationLevel = rcvgo.OptimizationBalanced
+tpl := GoVision.NewTemplate("icon")
+tpl.OptimizationLevel = GoVision.OptimizationBalanced
 tpl.ScaleStep = 0.05 // Шаг изменения масштаба
 
 result, err := tpl.CVMatch(screen)
@@ -96,7 +96,7 @@ if err == nil && result != nil {
 Позволяет ограничить область поиска на основе предыдущих находок или относительных координат экрана:
 
 ```go
-p := rcvgo.NewPredictor()
+p := GoVision.NewPredictor()
 // Относительные координаты (0.1 от центра по X, -0.1 по Y)
 recordPos := [2]float64{0.1, -0.1}
 screenRes := image.Pt(1920, 1080)
