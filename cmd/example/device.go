@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/trojvn/rcvgo"
-	"github.com/trojvn/rcvgo/device"
+	"github.com/trojvn/GoVision"
+	"github.com/trojvn/GoVision/device"
 )
 
 // MockDevice — пример реализации интерфейса device.Device.
@@ -43,7 +43,7 @@ func ExampleDeviceUsage() {
 
 	// 3. Подготавливаем шаблоны для поиска
 	// Допустим, мы ищем кнопку "Принять"
-	btnAccept := rcvgo.NewTemplate("accept_button")
+	btnAccept := GoVision.NewTemplate("accept_button")
 	btnAccept.Threshold = 0.85
 
 	// 4. Пример: Ожидание появления кнопки и нажатие на нее
@@ -59,8 +59,8 @@ func ExampleDeviceUsage() {
 	multi := device.NewMultiEngine(myDevice)
 
 	templates := []device.TemplateInterface{
-		rcvgo.NewTemplate("error_popup"),
-		rcvgo.NewTemplate("success_popup"),
+		GoVision.NewTemplate("error_popup"),
+		GoVision.NewTemplate("success_popup"),
 	}
 
 	fmt.Println("Ожидаем результат операции...")

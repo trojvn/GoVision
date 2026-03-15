@@ -1,8 +1,8 @@
-package rcvgo
+package GoVision
 
 import (
-	"github.com/trojvn/rcvgo/engines"
-	"github.com/trojvn/rcvgo/utils"
+	"github.com/trojvn/GoVision/engines"
+	"github.com/trojvn/GoVision/utils"
 	"gocv.io/x/gocv"
 )
 

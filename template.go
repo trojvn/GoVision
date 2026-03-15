@@ -1,4 +1,4 @@
-package rcvgo
+package GoVision
 
 import (
 	"errors"
@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/trojvn/rcvgo/core"
-	"github.com/trojvn/rcvgo/engines"
-	"github.com/trojvn/rcvgo/utils"
+	"github.com/trojvn/GoVision/core"
+	"github.com/trojvn/GoVision/engines"
+	"github.com/trojvn/GoVision/utils"
 	"gocv.io/x/gocv"
 )
 

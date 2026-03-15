@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/trojvn/rcvgo"
+	"github.com/trojvn/GoVision"
 	"gocv.io/x/gocv"
 )
 
@@ -18,10 +18,10 @@ func main() {
 
 	// 2. Инициализация шаблона
 	// По умолчанию ищет в папке "images/" и добавляет расширение ".png"
-	tpl := rcvgo.NewTemplate("button")
+	tpl := GoVision.NewTemplate("button")
 	tpl.Threshold = 0.8
 	tpl.RGB = true
-	tpl.OptimizationLevel = rcvgo.OptimizationBalanced
+	tpl.OptimizationLevel = GoVision.OptimizationBalanced
 
 	// 3. Поиск шаблона на экране
 	point, err := tpl.MatchIn(screen)

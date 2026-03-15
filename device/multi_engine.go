@@ -28,7 +28,7 @@ func (me *MultiEngine) LoopFindMulti(templates []TemplateInterface, timeout time
 		if err == nil && !screen.Empty() {
 			for _, tpl := range templates {
 				// Пробуем найти каждый шаблон (2 попытки как в оригинале)
-				for i := 0; i < 2; i++ {
+				for range 2 {
 					pos, err := tpl.MatchIn(screen)
 					if err == nil {
 						me.LastMatched = tpl

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"image"
 
-	"github.com/trojvn/rcvgo/core"
+	"github.com/trojvn/GoVision/core"
 	"gocv.io/x/gocv"
 )
 

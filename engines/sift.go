@@ -3,8 +3,8 @@ package engines
 import (
 	"errors"
 
-	"github.com/trojvn/rcvgo/core"
-	"github.com/trojvn/rcvgo/utils"
+	"github.com/trojvn/GoVision/core"
+	"github.com/trojvn/GoVision/utils"
 	"gocv.io/x/gocv"
 )
 
